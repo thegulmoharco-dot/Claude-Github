@@ -2,9 +2,10 @@
   Best Sellers carousel product card — a presentation-layer variant of the
   homepage product card (snippets/home-product-card.liquid). Same real
   Shopify product data, same image treatment, badge, material tag, eyebrow,
-  title and price, same real add-to-cart plumbing (snippets/quick-add.liquid)
-  and Quick View trigger. The one approved change for the Best Sellers
-  section: the CTA moves from the sitewide floating circular hover-button on
+  title and price, same real add-to-cart plumbing (snippets/quick-add.liquid).
+  The approved card recipe for this section is image, category, title,
+  price, bag control — no Quick View row. The one approved change to the
+  CTA itself: it moves from the sitewide floating circular hover-button on
   the image to a small inline bag icon beside the price. Nothing about the
   shared product-card system elsewhere on the site is modified.
 
@@ -89,7 +90,6 @@
         </div>
       </div>
     </div>
-    {% render 'quick-view-trigger', product: product %}
   </product-card>
 {% endif %}
 
@@ -188,7 +188,11 @@
      real quick-add markup/component untouched (add-to-cart, the "choose
      options" fallback and cart state all behave exactly as elsewhere) —
      only its position and chrome are restyled, scoped to .bsc-card__cta so
-     no other product card on the site is affected. */
+     no other product card on the site is affected.
+
+     .bsc-card__cta itself stays a compact 20x20 box so it doesn't disturb
+     the price row's layout; the actual button is given a proper 44x44 hit
+     area via a negative inset, kept invisible beyond the 20px icon. */
   .bsc-card__cta {
     position: relative;
     width: 20px;
@@ -205,12 +209,33 @@
     pointer-events: auto;
   }
 
-  .bsc-card__cta .quick-add__button {
-    position: static;
+  /* Sitewide, the "Add" and "Choose" buttons both render whenever
+     data-quick-add-button is left at its default "both" (true until a
+     variant swatch is actively selected — see assets/quick-add.js) and
+     stay invisibly stacked because .quick-add__button is absolutely
+     positioned to the exact same spot elsewhere. Repositioning it below
+     (position: static, so it can sit inline next to the price) removes
+     that overlap, so without this explicit exclusivity both buttons would
+     render as two stacked controls. This makes the same default-to-"add"
+     behavior explicit instead, and still switches to "Choose" for a
+     product that genuinely needs variant selection. */
+  .bsc-card__cta .quick-add__button { display: none; }
+
+  .bsc-card__cta .quick-add:not([data-quick-add-button='choose']) .quick-add__button--add {
     display: flex;
-    opacity: 1;
-    width: 20px;
-    height: 20px;
+  }
+
+  .bsc-card__cta .quick-add[data-quick-add-button='choose'] .quick-add__button--choose {
+    display: flex;
+  }
+
+  .bsc-card__cta .quick-add__button {
+    position: absolute;
+    inset: -12px; /* 44px hit area around the 20px visible icon */
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: auto;
     min-width: 0;
     padding: 0;
     border: 0;
@@ -219,6 +244,7 @@
     backdrop-filter: none;
     box-shadow: none;
     color: var(--gh-burgundy);
+    opacity: 1;
     transition: transform 0.2s ease;
   }
 
@@ -227,14 +253,12 @@
   .bsc-card__cta .add-to-cart-text,
   .bsc-card__cta .add-to-cart-icon {
     background: none;
-    width: 100%;
-    height: 100%;
+    width: 20px;
+    height: 20px;
     border-radius: 0;
   }
 
   .bsc-card__cta .add-to-cart-icon svg { width: 100%; height: 100%; }
 
   .bsc-card__cta .add-to-cart-text__content { display: none; }
-
-  product-card.bsc-card > .qv-trigger { margin-top: 10px; }
 {% endstylesheet %}

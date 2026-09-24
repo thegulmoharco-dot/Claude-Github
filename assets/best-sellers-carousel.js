@@ -15,8 +15,14 @@ class BestSellersCarousel extends HTMLElement {
   static SIDE_SCALE = 0.9;
   static SIDE_ROTATE_DEG = 4;
   static SIDE_OPACITY = 0.68;
-  static DESKTOP_PEEK_RATIO = 0.62; // how much of a side card's width peeks out next to center
-  static MOBILE_OFF_RATIO = 1.08; // > 1 so a hidden neighbor never leaves a sliver visible
+  // Desktop: distance from center to a side card's own center, as a multiple
+  // of card width. At SIDE_SCALE = 0.9 a ratio below ~0.95 makes the side
+  // card's inner edge cross under the center card (content collision) — 1.02
+  // keeps a small, deliberate gap instead, matching the approved [SIDE] gap
+  // [CENTER] gap [SIDE] composition rather than an overlapping coverflow.
+  static SIDE_OFFSET_RATIO = 1.02;
+  static MOBILE_OFF_RATIO = 1.2; // > 1 so a hidden neighbor never leaves a sliver visible
+  static SIDE_RECESS_PX = 30; // desktop: subtle translateZ recession for side cards
   static DRAG_THRESHOLD = 6; // px, before a gesture commits to horizontal or vertical
   static SWIPE_COMPLETE_RATIO = 0.18; // fraction of card width that counts as "swiped through"
 
@@ -94,7 +100,7 @@ class BestSellersCarousel extends HTMLElement {
     const isDesktop = this.#mqlDesktop.matches;
     const activeSlide = this.slides[this.#active];
     const cardWidth = activeSlide ? activeSlide.getBoundingClientRect().width : 0;
-    const sideOffset = cardWidth * (isDesktop ? BestSellersCarousel.DESKTOP_PEEK_RATIO : BestSellersCarousel.MOBILE_OFF_RATIO);
+    const sideOffset = cardWidth * (isDesktop ? BestSellersCarousel.SIDE_OFFSET_RATIO : BestSellersCarousel.MOBILE_OFF_RATIO);
     const instantNow = instant || this.#mqlReducedMotion.matches;
 
     // While actively dragging, the outgoing center card and the incoming
@@ -110,6 +116,7 @@ class BestSellersCarousel extends HTMLElement {
       const dir = distance === 0 ? 0 : distance > 0 ? 1 : -1;
 
       let x = dir * sideOffset;
+      let z = 0;
       let scale = 1;
       let rotate = 0;
       let opacity = 1;
@@ -119,12 +126,14 @@ class BestSellersCarousel extends HTMLElement {
       if (abs === 1 && isDesktop) {
         scale = BestSellersCarousel.SIDE_SCALE;
         rotate = -dir * BestSellersCarousel.SIDE_ROTATE_DEG;
+        z = -BestSellersCarousel.SIDE_RECESS_PX;
         opacity = BestSellersCarousel.SIDE_OPACITY;
         zIndex = 2;
       } else if (abs >= 1) {
         // Mobile side/far cards, and desktop cards beyond the immediate
         // neighbors: fully clipped by .gh-bestsellers__stage and inert.
-        x = dir * sideOffset * (isDesktop ? abs + 0.6 : 1);
+        x = dir * sideOffset * (isDesktop ? abs + 0.5 : 1);
+        z = -BestSellersCarousel.SIDE_RECESS_PX * 2;
         scale = BestSellersCarousel.SIDE_SCALE;
         opacity = 0;
         zIndex = 1;
@@ -143,7 +152,7 @@ class BestSellersCarousel extends HTMLElement {
       }
 
       slide.style.transitionDuration = instantNow || dragDx !== 0 ? '0s' : '';
-      slide.style.transform = `translate3d(calc(-50% + ${x}px), 0, 0) scale(${scale}) rotateY(${rotate}deg)`;
+      slide.style.transform = `translate3d(${x}px, 0, ${z}px) scale(${scale}) rotateY(${rotate}deg)`;
       slide.style.opacity = String(opacity);
       slide.style.zIndex = String(zIndex);
       slide.style.pointerEvents = pointerEvents;
