@@ -1,0 +1,240 @@
+{%- doc -%}
+  Best Sellers carousel product card — a presentation-layer variant of the
+  homepage product card (snippets/home-product-card.liquid). Same real
+  Shopify product data, same image treatment, badge, material tag, eyebrow,
+  title and price, same real add-to-cart plumbing (snippets/quick-add.liquid)
+  and Quick View trigger. The one approved change for the Best Sellers
+  section: the CTA moves from the sitewide floating circular hover-button on
+  the image to a small inline bag icon beside the price. Nothing about the
+  shared product-card system elsewhere on the site is modified.
+
+  @param {object} product - The product to render
+  @param {string} section_id - The owning section id, forwarded to quick-add for unique form ids
+  @param {object} [block] - The owning block, forwarded to quick-add
+  @param {string} [badge] - Optional badge text, e.g. "New" or "Bestseller"
+
+  @example
+  {% render 'best-sellers-card', product: block.settings.product, section_id: section.id, block: block, badge: block.settings.badge %}
+{%- enddoc -%}
+
+{% if product == blank %}
+  <div class="bsc-card bsc-card--empty">
+    <div class="bsc-card__media gh-art" style="--gh-art-ratio: 4 / 5;">
+      <div class="gh-art__placeholder">Select a product<br>in the theme editor</div>
+    </div>
+  </div>
+{% else %}
+  {%- liquid
+    assign lifestyle_image = null
+    if product.media[1].media_type == 'image'
+      assign lifestyle_image = product.media[1]
+    endif
+
+    assign material_value = product.metafields.custom.material.value | downcase
+    assign is_sterling_silver = false
+    if material_value contains 'silver'
+      assign is_sterling_silver = true
+    elsif product.tags contains '925-silver' or product.tags contains 'sterling-silver'
+      assign is_sterling_silver = true
+    endif
+  -%}
+  <product-card class="bsc-card" data-product-id="{{ product.id }}">
+    <a
+      href="{{ product.url }}"
+      class="bsc-card__media gh-media"
+      style="--gh-art-ratio: 4 / 5;"
+      aria-label="{{ product.title | escape }}"
+      ref="productCardLink"
+    >
+      {% if product.featured_image %}
+        {{
+          product.featured_image
+          | image_url: width: 900
+          | image_tag:
+            widths: '400, 600, 800, 900',
+            sizes: '(min-width: 990px) 26vw, 74vw',
+            alt: product.featured_image.alt | default: product.title,
+            loading: 'lazy',
+            class: 'gh-media__img bsc-card__img bsc-card__img--primary'
+        }}
+      {% endif %}
+      {% if lifestyle_image %}
+        {{
+          lifestyle_image.preview_image
+          | image_url: width: 900
+          | image_tag:
+            widths: '400, 600, 800, 900',
+            sizes: '(min-width: 990px) 26vw, 74vw',
+            alt: '',
+            loading: 'lazy',
+            class: 'gh-media__img bsc-card__img bsc-card__img--hover'
+        }}
+      {% endif %}
+      {% if badge != blank %}
+        <span class="bsc-card__badge">{{ badge }}</span>
+      {% endif %}
+      {% if is_sterling_silver %}
+        <span class="bsc-card__material{% if badge != blank %} bsc-card__material--stacked{% endif %}">925 Sterling Silver</span>
+      {% endif %}
+    </a>
+    <div class="bsc-card__info">
+      {% if product.type != blank %}
+        <div class="gh-eyebrow">{{ product.type }}</div>
+      {% endif %}
+      <a href="{{ product.url }}" class="bsc-card__name">{{ product.title }}</a>
+      <div class="bsc-card__row">
+        <div class="bsc-card__price">{% render 'price', product_resource: product %}</div>
+        <div class="bsc-card__cta" aria-label="Add {{ product.title | escape }} to bag">
+          {% render 'quick-add', product: product, section_id: section_id, block: block %}
+        </div>
+      </div>
+    </div>
+    {% render 'quick-view-trigger', product: product %}
+  </product-card>
+{% endif %}
+
+{% stylesheet %}
+  .bsc-card {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .bsc-card--empty { opacity: 0.6; }
+
+  .bsc-card__media { display: block; margin-bottom: 18px; }
+
+  .bsc-card__img--hover {
+    opacity: 0;
+    transition: opacity 0.45s ease;
+  }
+
+  product-card:is(:hover, :focus-within) .bsc-card__img--hover { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bsc-card__img--hover { transition: none; }
+  }
+
+  .bsc-card__badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    background: var(--gh-cream);
+    padding: 4px 10px;
+    font-family: var(--gh-sans);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gh-burgundy);
+  }
+
+  .bsc-card__material {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    background: rgba(244, 241, 234, 0.7);
+    border: 1px solid rgba(30, 21, 18, 0.16);
+    padding: 5px 10px;
+    font-family: var(--gh-mono);
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--gh-burgundy);
+    pointer-events: none;
+  }
+
+  .bsc-card__material--stacked { top: 38px; }
+
+  @media screen and (max-width: 460px) {
+    .bsc-card__material { padding: 3px 6px; font-size: 6.5px; letter-spacing: 0.05em; }
+  }
+
+  .bsc-card__info { display: block; padding: 0 2px; }
+
+  .bsc-card__name {
+    display: block;
+    font-family: var(--gh-serif);
+    font-weight: 400;
+    font-size: 21px;
+    line-height: 1.15;
+    letter-spacing: -0.005em;
+    color: var(--gh-ink);
+    margin-bottom: 10px;
+  }
+
+  .bsc-card__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .bsc-card__price,
+  .bsc-card__price .price {
+    font-family: var(--gh-sans);
+    font-style: normal;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--gh-burgundy);
+  }
+
+  /* The one approved CTA change for this section: a small inline bag
+     control beside the price, replacing the sitewide floating hover-circle
+     quick-add button used on every other product card. This reuses the
+     real quick-add markup/component untouched (add-to-cart, the "choose
+     options" fallback and cart state all behave exactly as elsewhere) —
+     only its position and chrome are restyled, scoped to .bsc-card__cta so
+     no other product card on the site is affected. */
+  .bsc-card__cta {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+  }
+
+  .bsc-card__cta .quick-add {
+    position: static;
+    inset: auto;
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+  }
+
+  .bsc-card__cta .quick-add__button {
+    position: static;
+    display: flex;
+    opacity: 1;
+    width: 20px;
+    height: 20px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    color: var(--gh-burgundy);
+    transition: transform 0.2s ease;
+  }
+
+  .bsc-card__cta .quick-add__button:hover { transform: scale(1.08); }
+
+  .bsc-card__cta .add-to-cart-text,
+  .bsc-card__cta .add-to-cart-icon {
+    background: none;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .bsc-card__cta .add-to-cart-icon svg { width: 100%; height: 100%; }
+
+  .bsc-card__cta .add-to-cart-text__content { display: none; }
+
+  product-card.bsc-card > .qv-trigger { margin-top: 10px; }
+{% endstylesheet %}

@@ -1,0 +1,306 @@
+{%- doc -%}
+  Best Sellers — an insertable homepage section only. Kicker, heading, lede,
+  a coverflow-style product carousel (dominant center card, recessed side
+  neighbors, editorial arrows + dots), then a "View all" link. Everything it
+  renders is scoped under .gh-bestsellers / <best-sellers-carousel>: it does
+  not touch the header, footer, navigation, any other homepage section, or
+  the shared product-card system — see snippets/best-sellers-card.liquid for
+  the one approved, section-local CTA change.
+
+  Reuses the existing homepage type/color tokens and section rhythm from
+  snippets/gulmohar-home-fonts.liquid (loaded once, by home-hero.liquid,
+  earlier in section order) — no new global styles are introduced.
+{%- enddoc -%}
+
+{%- liquid
+  assign product_blocks = section.blocks | where: 'type', 'product'
+  assign populated_count = 0
+  for block in product_blocks
+    if block.settings.product != blank
+      assign populated_count = populated_count | plus: 1
+    endif
+  endfor
+-%}
+
+{% if populated_count > 0 %}
+  <div class="section-background color-{{ section.settings.color_scheme }}"></div>
+  <section class="gulmohar-home gh-bestsellers color-{{ section.settings.color_scheme }}">
+    <div class="gh-section-head">
+      {% if section.settings.kicker != blank %}
+        <div class="gh-kicker">{{ section.settings.kicker }}</div>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h2 class="gh-h2">{{ section.settings.heading }}</h2>
+      {% endif %}
+      {% if section.settings.description != blank %}
+        <p class="gh-lede">{{ section.settings.description }}</p>
+      {% endif %}
+    </div>
+
+    <best-sellers-carousel class="gh-bestsellers__carousel">
+      <div class="gh-bestsellers__stage">
+        {% if populated_count > 1 %}
+          <button
+            type="button"
+            class="gh-bestsellers__arrow gh-bestsellers__arrow--prev"
+            data-bs-prev
+            aria-label="Previous product"
+          >
+            <span class="svg-wrapper">{{ 'icon-caret.svg' | inline_asset_content }}</span>
+          </button>
+        {% endif %}
+
+        <div class="gh-bestsellers__track" data-bs-track>
+          {% for block in product_blocks %}
+            {% if block.settings.product != blank %}
+              <div class="gh-bestsellers__slide" data-bs-slide {{ block.shopify_attributes }}>
+                {% render 'best-sellers-card',
+                  product: block.settings.product,
+                  section_id: section.id,
+                  block: block,
+                  badge: block.settings.badge
+                %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        {% if populated_count > 1 %}
+          <button
+            type="button"
+            class="gh-bestsellers__arrow gh-bestsellers__arrow--next"
+            data-bs-next
+            aria-label="Next product"
+          >
+            <span class="svg-wrapper">{{ 'icon-caret.svg' | inline_asset_content }}</span>
+          </button>
+        {% endif %}
+      </div>
+
+      {% if populated_count > 1 %}
+        <div class="gh-bestsellers__dots" data-bs-dots aria-hidden="true">
+          {% for i in (1..populated_count) %}
+            <button
+              type="button"
+              class="gh-bestsellers__dot{% if forloop.first %} is-active{% endif %}"
+              data-bs-dot
+              tabindex="-1"
+            ></button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </best-sellers-carousel>
+
+    {% if section.settings.view_all_label != blank %}
+      <div class="gh-bestsellers__foot">
+        <a href="{{ section.settings.view_all_link | default: '#' }}" class="gh-text-link">{{ section.settings.view_all_label }}</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <script src="{{ 'best-sellers-carousel.js' | asset_url }}" defer></script>
+{% endif %}
+
+{% stylesheet %}
+  .gh-bestsellers { padding: clamp(56px, 9vw, 104px) 0; }
+
+  .gh-bestsellers__carousel { display: block; }
+
+  .gh-bestsellers__stage {
+    position: relative;
+    max-width: 92rem;
+    margin: 0 auto;
+    overflow: hidden;
+    padding: 0 clamp(20px, 7vw, 72px);
+  }
+
+  .gh-bestsellers__track {
+    position: relative;
+    height: clamp(400px, 42vw, 580px);
+    perspective: 1600px;
+  }
+
+  .gh-bestsellers__slide {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: var(--bsc-card-w, 300px);
+    height: 100%;
+    backface-visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(-50%, 0, 0);
+    transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.65s ease;
+    will-change: transform, opacity;
+  }
+
+  /* No-JS / pre-hydration fallback: the first card reads correctly before
+     best-sellers-carousel.js runs its own inline-style render pass. */
+  .gh-bestsellers__slide:first-child {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 3;
+  }
+
+  @media screen and (max-width: 749px) {
+    .gh-bestsellers { --bsc-card-w: min(80vw, 360px); }
+    .gh-bestsellers__stage { padding: 0 28px; }
+  }
+
+  @media screen and (min-width: 750px) {
+    .gh-bestsellers { --bsc-card-w: min(24vw, 320px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gh-bestsellers__slide { transition: opacity 0.3s ease; }
+  }
+
+  /* Editorial arrows: no circle, no shadow, thin caret glyph reused from
+     the theme's own slideshow icon set (snippets/slideshow-arrow.liquid). */
+  .gh-bestsellers__arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--gh-ink);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .gh-bestsellers__arrow .svg-wrapper {
+    width: 18px;
+    height: 18px;
+  }
+
+  .gh-bestsellers__arrow--prev { left: clamp(0px, 1vw, 16px); }
+  .gh-bestsellers__arrow--prev .svg-wrapper { transform: scaleX(-1); }
+  .gh-bestsellers__arrow--next { right: clamp(0px, 1vw, 16px); }
+
+  .gh-bestsellers__arrow:hover:not(:disabled) { opacity: 0.6; }
+
+  .gh-bestsellers__arrow:disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+
+  @media screen and (max-width: 749px) {
+    .gh-bestsellers__arrow { display: none; }
+  }
+
+  .gh-bestsellers__dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: clamp(20px, 3vw, 32px) auto 0;
+  }
+
+  .gh-bestsellers__dot {
+    width: 5px;
+    height: 5px;
+    padding: 0;
+    border: 1px solid var(--gh-ink-48);
+    border-radius: 50%;
+    background: var(--gh-bg-main);
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  }
+
+  .gh-bestsellers__dot.is-active {
+    background: var(--gh-burgundy);
+    border-color: var(--gh-burgundy);
+    transform: scale(1.4);
+  }
+
+  .gh-bestsellers__foot { text-align: center; margin-top: clamp(28px, 4vw, 40px); }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Home Best Sellers",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "Kicker",
+      "default": "— Best Sellers —"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "info": "Wrap a word in <em></em> for the burgundy italic accent.",
+      "default": "Best Sellers"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "The pieces our customers keep coming back to."
+    },
+    {
+      "type": "text",
+      "id": "view_all_label",
+      "label": "\"View all\" link label",
+      "default": "View All Jewellery →"
+    },
+    {
+      "type": "url",
+      "id": "view_all_link",
+      "label": "\"View all\" link"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Color scheme",
+      "default": "scheme-gulmohar-sand"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product",
+      "name": "Product",
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Product"
+        },
+        {
+          "type": "select",
+          "id": "badge",
+          "label": "Badge",
+          "options": [
+            { "value": "", "label": "None" },
+            { "value": "New", "label": "New" },
+            { "value": "Bestseller", "label": "Bestseller" }
+          ],
+          "default": ""
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Home Best Sellers",
+      "blocks": [
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" }
+      ]
+    }
+  ]
+}
+{% endschema %}
