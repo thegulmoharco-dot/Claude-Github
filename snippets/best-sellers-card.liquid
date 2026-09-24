@@ -1,21 +1,34 @@
 {%- doc -%}
-  Best Sellers carousel product card — a presentation-layer variant of the
-  homepage product card (snippets/home-product-card.liquid). Same real
-  Shopify product data, same image treatment, badge, material tag, eyebrow,
-  title and price, same real add-to-cart plumbing (snippets/quick-add.liquid).
-  The approved card recipe for this section is image, category, title,
-  price, bag control — no Quick View row. The one approved change to the
-  CTA itself: it moves from the sitewide floating circular hover-button on
-  the image to a small inline bag icon beside the price. Nothing about the
-  shared product-card system elsewhere on the site is modified.
+  Best Sellers carousel product card — the spatial-presentation card used by
+  sections/home-best-sellers.liquid, built to the design handoff in
+  design_handoff_best_sellers/. It reuses the existing TGC card language and
+  the real add-to-cart plumbing (snippets/quick-add.liquid); it is a
+  presentation layer, not a redesign of the shared product card, and nothing
+  in the sitewide product-card system is modified.
+
+  Layout, per the handoff card spec:
+    image wrapper (position:relative)
+      ├─ product image (cover), optional hover image
+      ├─ material badge         — top-left, inside this wrapper
+      ├─ image-gallery dots     — bottom-center, inside this wrapper
+      └─ bag+ chip (quick-add)  — bottom-right, inside this wrapper (34px circle)
+    info
+      ├─ category eyebrow
+      ├─ product title
+      └─ price
+  Every badge/chip is absolutely positioned INSIDE the card's own relatively
+  positioned media wrapper, so it moves and scales with the card (handoff
+  bug #2). The large "Add to Bag" button is replaced by the small circular
+  bag chip; there is no Quick View row (handoff bug #3).
+
+  Colour and type come from the live homepage tokens (gulmohar-home-fonts:
+  --gh-burgundy / --gh-ink / --gh-serif / --gh-sans / --gh-mono / --gh-cream)
+  so the section stays consistent with the rest of the homepage rather than
+  hardcoding the mockup's raw palette.
 
   @param {object} product - The product to render
   @param {string} section_id - The owning section id, forwarded to quick-add for unique form ids
   @param {object} [block] - The owning block, forwarded to quick-add
-  @param {string} [badge] - Optional badge text, e.g. "New" or "Bestseller"
-
-  @example
-  {% render 'best-sellers-card', product: block.settings.product, section_id: section.id, block: block, badge: block.settings.badge %}
 {%- enddoc -%}
 
 {% if product == blank %}
@@ -38,22 +51,21 @@
     elsif product.tags contains '925-silver' or product.tags contains 'sterling-silver'
       assign is_sterling_silver = true
     endif
+
+    assign dot_count = product.images.size
+    if dot_count > 4
+      assign dot_count = 4
+    endif
   -%}
   <product-card class="bsc-card" data-product-id="{{ product.id }}">
-    <a
-      href="{{ product.url }}"
-      class="bsc-card__media gh-media"
-      style="--gh-art-ratio: 4 / 5;"
-      aria-label="{{ product.title | escape }}"
-      ref="productCardLink"
-    >
+    <div class="bsc-card__media gh-media" style="--gh-art-ratio: 4 / 5;">
       {% if product.featured_image %}
         {{
           product.featured_image
           | image_url: width: 900
           | image_tag:
             widths: '400, 600, 800, 900',
-            sizes: '(min-width: 990px) 26vw, 74vw',
+            sizes: '(min-width: 750px) 270px, 310px',
             alt: product.featured_image.alt | default: product.title,
             loading: 'lazy',
             class: 'gh-media__img bsc-card__img bsc-card__img--primary'
@@ -65,44 +77,59 @@
           | image_url: width: 900
           | image_tag:
             widths: '400, 600, 800, 900',
-            sizes: '(min-width: 990px) 26vw, 74vw',
+            sizes: '(min-width: 750px) 270px, 310px',
             alt: '',
             loading: 'lazy',
             class: 'gh-media__img bsc-card__img bsc-card__img--hover'
         }}
       {% endif %}
-      {% if badge != blank %}
-        <span class="bsc-card__badge">{{ badge }}</span>
-      {% endif %}
+
+      <a
+        href="{{ product.url }}"
+        class="bsc-card__media-link"
+        aria-label="{{ product.title | escape }}"
+        ref="productCardLink"
+      ></a>
+
       {% if is_sterling_silver %}
-        <span class="bsc-card__material{% if badge != blank %} bsc-card__material--stacked{% endif %}">925 Sterling Silver</span>
+        <span class="bsc-card__material">925 Sterling Silver</span>
       {% endif %}
-    </a>
-    <div class="bsc-card__info">
-      {% if product.type != blank %}
-        <div class="gh-eyebrow">{{ product.type }}</div>
-      {% endif %}
-      <a href="{{ product.url }}" class="bsc-card__name">{{ product.title }}</a>
-      <div class="bsc-card__row">
-        <div class="bsc-card__price">{% render 'price', product_resource: product %}</div>
-        <div class="bsc-card__cta" aria-label="Add {{ product.title | escape }} to bag">
-          {% render 'quick-add', product: product, section_id: section_id, block: block %}
+
+      {% if dot_count > 1 %}
+        <div class="bsc-card__dots" aria-hidden="true">
+          {% for i in (1..dot_count) %}
+            <span class="bsc-card__dot{% if forloop.first %} is-active{% endif %}"></span>
+          {% endfor %}
         </div>
+      {% endif %}
+
+      <div class="bsc-card__cta">
+        {% render 'quick-add', product: product, section_id: section_id, block: block %}
       </div>
     </div>
+
+    <a href="{{ product.url }}" class="bsc-card__info">
+      {% if product.type != blank %}
+        <div class="bsc-card__eyebrow">{{ product.type }}</div>
+      {% endif %}
+      <div class="bsc-card__name">{{ product.title }}</div>
+      <div class="bsc-card__price">{% render 'price', product_resource: product %}</div>
+    </a>
   </product-card>
 {% endif %}
 
 {% stylesheet %}
   .bsc-card {
-    display: flex;
-    flex-direction: column;
+    display: block;
     text-align: left;
   }
 
   .bsc-card--empty { opacity: 0.6; }
 
-  .bsc-card__media { display: block; margin-bottom: 18px; }
+  /* Media wrapper is the positioning context for every badge/chip on the
+     card (handoff bug #2 fix). .gh-media already provides position:relative,
+     aspect-ratio and overflow:hidden. */
+  .bsc-card__media { display: block; }
 
   .bsc-card__img--hover {
     opacity: 0;
@@ -115,110 +142,77 @@
     .bsc-card__img--hover { transition: none; }
   }
 
-  .bsc-card__badge {
+  /* Full-photo link for PDP navigation, beneath the badges/chip. The
+     carousel JS intercepts clicks on side cards (they recenter instead). */
+  .bsc-card__media-link {
     position: absolute;
-    top: 14px;
-    right: 14px;
-    z-index: 2;
-    background: var(--gh-cream);
-    padding: 4px 10px;
-    font-family: var(--gh-sans);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gh-burgundy);
+    inset: 0;
+    z-index: 1;
   }
 
+  /* Material badge — top-left, ivory chip, inside the media wrapper. */
   .bsc-card__material {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: 10px;
+    left: 10px;
     z-index: 2;
-    background: rgba(244, 241, 234, 0.7);
-    border: 1px solid rgba(30, 21, 18, 0.16);
-    padding: 5px 10px;
+    padding: 5px 9px;
+    background: rgba(244, 241, 234, 0.92);
     font-family: var(--gh-mono);
-    font-size: 9px;
+    font-size: 8px;
     line-height: 1;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     white-space: nowrap;
-    color: var(--gh-burgundy);
+    color: var(--gh-ink);
     pointer-events: none;
   }
 
-  .bsc-card__material--stacked { top: 38px; }
-
-  @media screen and (max-width: 460px) {
-    .bsc-card__material { padding: 3px 6px; font-size: 6.5px; letter-spacing: 0.05em; }
-  }
-
-  .bsc-card__info { display: block; padding: 0 2px; }
-
-  .bsc-card__name {
-    display: block;
-    font-family: var(--gh-serif);
-    font-weight: 400;
-    font-size: 21px;
-    line-height: 1.15;
-    letter-spacing: -0.005em;
-    color: var(--gh-ink);
-    margin-bottom: 10px;
-  }
-
-  .bsc-card__row {
+  /* Image-gallery dots — bottom-center, inside the media wrapper. */
+  .bsc-card__dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    z-index: 2;
+    transform: translateX(-50%);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 5px;
+    pointer-events: none;
   }
 
-  .bsc-card__price,
-  .bsc-card__price .price {
-    font-family: var(--gh-sans);
-    font-style: normal;
-    font-weight: 600;
-    font-size: 15px;
-    color: var(--gh-burgundy);
+  .bsc-card__dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(30, 21, 18, 0.28);
   }
 
-  /* The one approved CTA change for this section: a small inline bag
-     control beside the price, replacing the sitewide floating hover-circle
-     quick-add button used on every other product card. This reuses the
-     real quick-add markup/component untouched (add-to-cart, the "choose
-     options" fallback and cart state all behave exactly as elsewhere) —
-     only its position and chrome are restyled, scoped to .bsc-card__cta so
-     no other product card on the site is affected.
+  .bsc-card__dot.is-active { background: var(--gh-burgundy); }
 
-     .bsc-card__cta itself stays a compact 20x20 box so it doesn't disturb
-     the price row's layout; the actual button is given a proper 44x44 hit
-     area via a negative inset, kept invisible beyond the 20px icon. */
+  /* Bag chip — bottom-right, inside the media wrapper. This reuses the real
+     quick-add component (add-to-cart, the "choose options" fallback and cart
+     state all behave exactly as sitewide); only its position and chrome are
+     restyled to the handoff's 34px ivory circle, scoped to .bsc-card__cta so
+     no other product card on the site is affected. It is always visible
+     here, not hover-gated. */
   .bsc-card__cta {
-    position: relative;
-    width: 20px;
-    height: 20px;
-    flex: 0 0 20px;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
   }
 
   .bsc-card__cta .quick-add {
-    position: static;
-    inset: auto;
-    display: block;
-    width: 100%;
-    height: 100%;
-    pointer-events: auto;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
-  /* Sitewide, the "Add" and "Choose" buttons both render whenever
-     data-quick-add-button is left at its default "both" (true until a
-     variant swatch is actively selected — see assets/quick-add.js) and
-     stay invisibly stacked because .quick-add__button is absolutely
-     positioned to the exact same spot elsewhere. Repositioning it below
-     (position: static, so it can sit inline next to the price) removes
-     that overlap, so without this explicit exclusivity both buttons would
-     render as two stacked controls. This makes the same default-to-"add"
-     behavior explicit instead, and still switches to "Choose" for a
-     product that genuinely needs variant selection. */
+  /* Sitewide, both the "Add" and "Choose" buttons render until a variant is
+     actively selected (data-quick-add-button defaults to "both"), staying
+     invisible only because they are absolutely stacked at the same spot.
+     Re-chrome them here, and make the add/choose exclusivity explicit so
+     exactly one chip shows. */
   .bsc-card__cta .quick-add__button { display: none; }
 
   .bsc-card__cta .quick-add:not([data-quick-add-button='choose']) .quick-add__button--add {
@@ -231,34 +225,81 @@
 
   .bsc-card__cta .quick-add__button {
     position: absolute;
-    inset: -12px; /* 44px hit area around the 20px visible icon */
+    right: 10px;
+    bottom: 10px;
+    top: auto;
+    left: auto;
     align-items: center;
     justify-content: center;
-    width: auto;
-    height: auto;
+    width: 34px;
+    height: 34px;
     min-width: 0;
     padding: 0;
     border: 0;
-    border-radius: 0;
-    background: none;
+    border-radius: 50%;
+    background: rgba(244, 241, 234, 0.92);
     backdrop-filter: none;
     box-shadow: none;
-    color: var(--gh-burgundy);
+    color: rgba(30, 21, 18, 0.65);
     opacity: 1;
-    transition: transform 0.2s ease;
+    pointer-events: auto;
+    transition: color 180ms ease, transform 180ms ease;
   }
 
-  .bsc-card__cta .quick-add__button:hover { transform: scale(1.08); }
+  .bsc-card__cta .quick-add__button:hover {
+    color: var(--gh-burgundy);
+    transform: scale(1.08);
+  }
 
-  .bsc-card__cta .add-to-cart-text,
-  .bsc-card__cta .add-to-cart-icon {
+  .bsc-card__cta .add-to-cart-text {
     background: none;
-    width: 20px;
-    height: 20px;
     border-radius: 0;
+    height: auto;
   }
 
-  .bsc-card__cta .add-to-cart-icon svg { width: 100%; height: 100%; }
+  .bsc-card__cta .add-to-cart-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .bsc-card__cta .add-to-cart-icon svg { width: 16px; height: 16px; }
 
   .bsc-card__cta .add-to-cart-text__content { display: none; }
+
+  /* Info — below the photo. */
+  .bsc-card__info {
+    display: block;
+    padding: 16px 34px 0;
+  }
+
+  .bsc-card__eyebrow {
+    font-family: var(--gh-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gh-burgundy);
+  }
+
+  .bsc-card__name {
+    font-family: var(--gh-serif);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.28;
+    margin-top: 5px;
+    color: var(--gh-ink);
+  }
+
+  .bsc-card__price,
+  .bsc-card__price .price {
+    font-family: var(--gh-sans);
+    font-style: normal;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--gh-burgundy);
+    margin-top: 6px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .bsc-card__info { padding: 16px 22px 0; }
+  }
 {% endstylesheet %}
