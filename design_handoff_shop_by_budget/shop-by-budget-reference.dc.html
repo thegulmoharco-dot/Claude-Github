@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>The Gulmohar Co. — Shop by Budget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Manrope:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#F9F0E9; }
+  body { font-family:'Manrope', system-ui, sans-serif; color:#2A1A12; -webkit-font-smoothing:antialiased; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color:#9E2A1E; }
+  * { box-sizing: border-box; }
+  .gb-rail { scrollbar-width: none; }
+  .gb-rail::-webkit-scrollbar { display: none; }
+  .gb-tile:hover .gb-frame > * { transform: scale(1.025); }
+  .gb-tile:hover .gb-cta { color:#9E2A1E; }
+  .gb-tile:hover .gb-cta .gb-arrow { transform: translateX(4px); }
+  .gb-tile:hover .gb-rule { width: 44px; }
+  .gb-tile:hover .gb-cta span:first-child { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
+  .gb-tile:focus-visible { outline: 1px solid #9E2A1E; outline-offset: 10px; }
+  @media (prefers-reduced-motion: reduce) {
+    .gb-frame > *, .gb-arrow, .gb-rule { transition: none !important; }
+    .gb-tile:hover .gb-frame > * { transform: none; }
+  }
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<section aria-labelledby="gb-heading" style="background:#F9F0E9; padding:104px 0 104px;">
+  <div style="max-width:1180px; margin:0 auto; padding:0 44px; text-align:center;">
+    <h2 id="gb-heading" style="font-family:'Newsreader',serif; font-weight:400; font-size:clamp(28px,3.4vw,40px); line-height:1.12; letter-spacing:-0.01em; margin:0;">Shop by Budget.</h2>
+    <p style="font-family:'Manrope',sans-serif; font-weight:300; font-size:14px; line-height:1.6; color:rgba(42,26,18,0.72); margin:13px 0 0;">Beautiful pieces, whatever you're looking to spend.</p>
+  </div>
+
+  <div class="gb-rail" style="margin-top:66px; display:flex; gap:48px; overflow-x:auto; scroll-snap-type:x mandatory; padding:0 44px; scroll-padding-left:44px; max-width:1080px; margin-left:auto; margin-right:auto;">
+    <sc-for list="{{ tiers }}" as="t" hint-placeholder-count="4">
+      <a class="gb-tile" href="Gulmohar Collection.dc.html" aria-label="{{ t.aria }}" style="flex:0 0 max(200px, calc((100% - 144px) / 4)); scroll-snap-align:start; display:flex; flex-direction:column; color:inherit; text-decoration:none;">
+        <div class="gb-frame" style="position:relative; aspect-ratio:1/1; overflow:hidden; background:#F7F1EA;">
+          <image-slot id="{{ t.slotId }}" shape="rect" fit="cover" src="{{ t.src }}" placeholder="Drop image" title="{{ t.shot }}" alt="{{ t.alt }}" style="display:block; width:100%; height:100%; transition:transform 700ms cubic-bezier(.2,.6,.2,1);"></image-slot>
+        </div>
+        <div class="gb-rule" style="margin-top:26px; width:24px; height:1px; background:rgba(158,42,30,0.75); transition:width 600ms cubic-bezier(.2,.6,.2,1);"></div>
+        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size:18px; line-height:1.2; letter-spacing:0.01em; margin:16px 0 0;"><span style="font-size:13px; color:rgba(42,26,18,0.62);">Under </span><span style="color:#9E2A1E;">{{ t.amount }}</span></h3>
+        <p style="font-family:'Manrope',sans-serif; font-weight:300; font-size:12.5px; line-height:1.55; color:rgba(42,26,18,0.72); margin:10px 0 0; max-width:24ch; min-height:40px;">{{ t.desc }}</p>
+        <span class="gb-cta" style="display:inline-flex; align-items:center; gap:8px; flex-wrap:nowrap; white-space:nowrap; margin-top:26px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:400; letter-spacing:0.24em; text-transform:uppercase; color:rgba(42,26,18,0.7); transition:color 300ms ease;">
+          <span style="white-space:nowrap;">Shop Now</span>
+          <span class="gb-arrow" style="display:inline-block; transition:transform 300ms cubic-bezier(.2,.6,.2,1);">&#8594;</span>
+        </span>
+      </a>
+    </sc-for>
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      tiers: [
+        { slotId: 'gb-999', amount: '\u20B9999', desc: 'Simple pieces for every day.',
+          src: 'https://cdn.shopify.com/s/files/1/0737/3946/8889/files/0001-2531539062283728654.png?v=1789566281',
+          shot: 'CZ Pav\u00E9 Fan Pearl Stud Earrings (ER020)',
+          alt: 'CZ Pav\u00E9 Fan Pearl Stud Earrings — a fan silhouette in pav\u00E9 cubic zirconia with a pearl drop, rose gold plated',
+          aria: 'Shop jewellery under 999 rupees' },
+        { slotId: 'gb-1999', amount: '\u20B91,999', desc: 'Delicate pieces with a little more presence.',
+          src: 'https://cdn.shopify.com/s/files/1/0737/3946/8889/files/0004-2531539062283728654.png?v=1789566318',
+          shot: 'Pearl Bow Stud Earrings (ER001)',
+          alt: 'Pearl Bow Stud Earrings — a pearl bow with a cubic zirconia heart accent and petite pearl drop, rose gold plated',
+          aria: 'Shop jewellery under 1,999 rupees' },
+        { slotId: 'gb-2999', amount: '\u20B92,999', desc: 'Distinctive pieces for everyday expression.',
+          src: 'https://cdn.shopify.com/s/files/1/0737/3946/8889/files/0007-2531539062283728654.png?v=1789566340',
+          shot: 'Emerald Eye Serpent Hoop Earrings (ER003)',
+          alt: 'Emerald Eye Serpent Hoop Earrings — a sculptural serpent-head hoop in pav\u00E9 cubic zirconia with green stone eyes',
+          aria: 'Shop jewellery under 2,999 rupees' },
+        { slotId: 'gb-3999', amount: '\u20B93,999', desc: 'Statement pieces for giving and keeping.',
+          src: 'https://cdn.shopify.com/s/files/1/0737/3946/8889/files/EPS002_01_hero.png?v=1787091756',
+          shot: 'Pearl Teardrop Necklace & Earrings Set (EPS002)',
+          alt: 'Pearl Teardrop Necklace and Earrings Set — a lustrous pearl framed by teardrop silhouettes in rose gold',
+          aria: 'Shop jewellery under 3,999 rupees' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
