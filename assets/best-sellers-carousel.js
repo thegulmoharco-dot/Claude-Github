@@ -71,6 +71,10 @@ class BestSellersCarousel extends HTMLElement {
     window.addEventListener('resize', this.#onResize, { passive: true });
 
     this.render({ instant: true });
+    this.#fitHeight();
+    // Re-fit once web fonts land, since text wrapping (and therefore each
+    // card's natural height) can change after the fonts swap in.
+    document.fonts?.ready.then(() => this.#fitHeight());
   }
 
   disconnectedCallback() {
@@ -80,7 +84,30 @@ class BestSellersCarousel extends HTMLElement {
 
   #onResize = () => {
     cancelAnimationFrame(this.#resizeRaf);
-    this.#resizeRaf = requestAnimationFrame(() => this.render({ instant: true }));
+    this.#resizeRaf = requestAnimationFrame(() => {
+      this.render({ instant: true });
+      this.#fitHeight();
+    });
+  };
+
+  /**
+   * Size the stage to the tallest card's natural height so a full-scale
+   * (center) card is never clipped by the stage's overflow:hidden. The
+   * earlier fixed height was tuned to a single-line-price card, so a
+   * discounted product (compare-at + sale = an extra price line) or a
+   * two-line title made the center card taller than the stage and its last
+   * line — the sale price — was cut off. offsetHeight is the card's layout
+   * height, unaffected by the scale transform, so this measures the true
+   * natural height of every card and fits the tallest. Content-driven, so it
+   * holds for any product, title length, or currency without hardcoding.
+   */
+  #fitHeight = () => {
+    if (!this.track || !this.slides || this.slides.length === 0) return;
+    let max = 0;
+    for (const slide of this.slides) {
+      if (slide.offsetHeight > max) max = slide.offsetHeight;
+    }
+    if (max > 0) this.track.style.height = `${max}px`;
   };
 
   #onKeydown = (event) => {

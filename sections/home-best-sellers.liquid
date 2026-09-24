@@ -121,15 +121,17 @@
     margin-top: clamp(40px, 6vw, 64px);
   }
 
-  /* Fixed stage — cards are absolutely positioned inside it and driven by
+  /* Stage — cards are absolutely positioned inside it and driven by
      assets/best-sellers-carousel.js. overflow:hidden clips the receded /
-     off-stage neighbours; the fixed height means a card is exactly its own
-     natural (photo + info) height with no invented empty area beneath it. */
+     off-stage neighbours. The height is a safe fallback that fits a
+     full-scale card with a two-line title and a two-line (compare-at + sale)
+     price; best-sellers-carousel.js then sets it precisely to the tallest
+     card so a discounted centre card's sale price is never clipped. */
   .gh-bestsellers__stage {
     position: relative;
     width: 100%;
     max-width: 960px;
-    height: 440px;
+    height: 460px;
     overflow: hidden;
     perspective: 1500px;
     touch-action: pan-y;
@@ -208,7 +210,7 @@
 
     .gh-bestsellers__row { gap: 0; }
 
-    .gh-bestsellers__stage { max-width: 342px; height: 460px; }
+    .gh-bestsellers__stage { max-width: 342px; height: 510px; }
 
     /* Mobile arrows leave the flex flow and sit in the section's side gutter,
        over the stage's empty (off-stage-neighbour) edges — never over the
